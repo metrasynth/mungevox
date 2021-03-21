@@ -4,12 +4,18 @@ import "./index.css"
 import App from "./App"
 import reportWebVitals from "./reportWebVitals"
 
-ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-  document.getElementById("root")
-)
+import * as sunvox from "./sunvox-lib-loader"
+
+sunvox.svlib.then(() => {
+  sunvox.sv_init(0, 44100, 2, 0)
+
+  ReactDOM.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+    document.getElementById("root")
+  )
+})
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
