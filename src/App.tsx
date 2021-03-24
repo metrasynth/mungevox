@@ -18,16 +18,25 @@ function App({
   initialProject,
   initialMountedEditor,
   initialTypescript,
+  initialJsSource = 'Object.defineProperty(exports, "__esModule", { value: true });',
+  initialJsFrame,
+  initialCounter = 0,
 }: {
   defaultValue?: string
   defaultEditorOptions?: editor.IStandaloneEditorConstructionOptions
   initialProject?: Project
   initialMountedEditor?: editor.ICodeEditor
-  initialTypescript?: TypeScriptWorker | undefined | any
+  initialTypescript?: TypeScriptWorker | any
+  initialJsSource?: string
+  initialJsFrame?: HTMLIFrameElement | null
+  initialCounter?: number
 }) {
   const [project, setProject] = useState(initialProject)
   const [mountedEditor, setMountedEditor] = useState(initialMountedEditor)
   const [typescript, setTypescript] = useState(initialTypescript)
+  const [jsFrame, setJsFrame] = useState(initialJsFrame)
+  const [counter, setCounter] = useState(initialCounter)
+  const [jsSource, setJsSource] = useState(initialJsSource)
 
   async function buildProject() {
     const uri = mountedEditor!.getModel()!.uri.toString()
@@ -36,6 +45,8 @@ function App({
     const firstOutputFile = output.outputFiles[0]
     if (firstOutputFile) {
       console.log(firstOutputFile.text)
+      setJsSource(firstOutputFile.text)
+      setCounter(counter + 1)
     } else {
       console.error("No output file")
     }
@@ -50,6 +61,38 @@ function App({
   function stopSlot() {}
 
   function resetSlot() {}
+
+  function frameContents() {
+    if (counter === 0) {
+      return ""
+    }
+    // language=HTML5
+    return `
+      <!DOCTYPE html>
+      <html data-counter=${counter}>
+      <head>
+        <meta charset="UTF-8">
+      </head>
+      <body>
+        <script>
+        window.addEventListener('DOMContentLoaded', function() {
+          window.setTimeout(function() {
+            try {
+              let exports = {}
+              ;${jsSource};
+              console.log({ exports })
+              const project = exports.createProject()
+              console.log({ project })
+            } catch(e) {
+              console.error(e.toString())
+            }
+          }, 1)
+        })
+        </script>
+      </body>
+      </html>
+    `
+  }
 
   async function editorDidMount(editor: editor.IStandaloneCodeEditor, monaco: Monaco) {
     setMountedEditor(editor)
@@ -89,6 +132,7 @@ function App({
       <p>(Compilation and playback controls for the SunVox project.)</p>
       <h2>Interface</h2>
       <p>(The generated interface will show here based on the source code.)</p>
+      <iframe srcDoc={frameContents()} ref={setJsFrame} title={`${counter}`} />
       <hr />
       <h1>
         About the <i>SunVox Project Construction Kit (SVPCK)</i>
