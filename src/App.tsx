@@ -186,7 +186,10 @@ function App({
       )}
       {!project && <div>No project built.</div>}
       <h2>Interface</h2>
-      <p>(The generated interface will show here based on the source code.)</p>
+      <p>
+        (Eventually, a MIDI-controllable interface will appear here, built by your
+        code.)
+      </p>
       <iframe
         style={{ display: "none" }}
         srcDoc={frameContents()}
@@ -197,6 +200,26 @@ function App({
       <h1>
         About <i>MungeVox</i>
       </h1>
+      <p>
+        Use <a href="https://typescript.org">Typescript</a> to create a SunVox project.
+        Play it back in your browser.
+      </p>
+      <h2>Todo</h2>
+      <ul>
+        <li>Loading & saving</li>
+        <li>Sharing & social</li>
+        <li>Fit & finish</li>
+        <li>…</li>
+      </ul>
+      <h2>Back story</h2>
+      <p>
+        Once upon a time, Queries: discovered SunVox and was confused; rediscovered
+        SunVox and was amazed; peeked at its file format and was impressed; reverse
+        engineered it and was pleased; created the MetaModule Construction Kit in Python
+        and was entertained; began porting it to JavaScript (renaming it MungeVox along
+        the way) and was excited. Queries is honored to share this with you, and is
+        curious to see what you do with it!
+      </p>
     </div>
   )
 }
