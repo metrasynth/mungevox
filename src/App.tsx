@@ -4,8 +4,9 @@ import Editor, { Monaco } from "@monaco-editor/react"
 import { DEFAULT_EDITOR_OPTIONS, DEFAULT_SOURCE } from "./defaults"
 import { editor, languages } from "monaco-editor"
 import { installEmbeddedDts } from "./embeddedDts"
-import { Project } from "radiant-voices"
+import { Project, projectChunks, toIffBuffer } from "radiant-voices"
 import * as rv from "radiant-voices"
+import * as sunvox from "./sunvox-lib-loader"
 import * as ts from "typescript"
 
 /** Parts of TypeScriptWorker from monaco's internals which implements ts.LanguageServiceHost, and has some extra methods. */
@@ -24,6 +25,7 @@ function App({
   initialTypescript,
   initialJsSource = 'Object.defineProperty(exports, "__esModule", { value: true });',
   initialJsFrame,
+  initialFile,
   initialCounter = 0,
 }: {
   defaultValue?: string
@@ -33,6 +35,7 @@ function App({
   initialTypescript?: TypeScriptWorker | any
   initialJsSource?: string
   initialJsFrame?: HTMLIFrameElement | null
+  initialFile?: Uint8Array
   initialCounter?: number
 }) {
   const [project, setProject] = useState(initialProject)
@@ -41,6 +44,7 @@ function App({
   const [jsFrame, setJsFrame] = useState(initialJsFrame)
   const [counter, setCounter] = useState(initialCounter)
   const [jsSource, setJsSource] = useState(initialJsSource)
+  const [file, setFile] = useState(initialFile)
 
   async function buildProject() {
     const uri = mountedEditor!.getModel()!.uri.toString()
@@ -64,15 +68,37 @@ function App({
     }
   }
 
-  function loadProjectIntoSlot() {}
+  function loadProjectIntoSlot() {
+    if (!project) {
+      throw new Error("no project")
+    }
+    sunvox.sv_close_slot(0)
+    sunvox.sv_open_slot(0)
+    for (const chunk of projectChunks(project)) {
+      console.log(chunk)
+    }
+    const file = new Uint8Array(toIffBuffer(projectChunks(project)).buffer)
+    setFile(file)
+    console.log({ file })
+    console.log(sunvox.sv_load_from_memory(0, file))
+  }
 
-  function rewindAndPlaySlot() {}
+  function rewindAndPlaySlot() {
+    sunvox.sv_play_from_beginning(0)
+  }
 
-  function playSlot() {}
+  function playSlot() {
+    sunvox.sv_play(0)
+  }
 
-  function stopSlot() {}
+  function stopSlot() {
+    sunvox.sv_stop(0)
+  }
 
-  function resetSlot() {}
+  function resetSlot() {
+    sunvox.sv_stop(0)
+    sunvox.sv_send_event(0, 0, sunvox.NOTECMD_CLEAN_SYNTHS, 0, 0, 0, 0)
+  }
 
   function frameContents() {
     if (counter === 0) {
@@ -143,7 +169,9 @@ function App({
       <h2>Controls</h2>
       <p>
         <button onClick={buildProject}>Build</button>
-        <button onClick={loadProjectIntoSlot}>Load</button>
+        <button onClick={loadProjectIntoSlot} disabled={!project}>
+          Load
+        </button>
         <button onClick={rewindAndPlaySlot}>⏮ ▶️</button>
         <button onClick={playSlot}>▶️</button>
         <button onClick={stopSlot}>⏹</button>
