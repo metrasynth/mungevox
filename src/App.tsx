@@ -81,6 +81,7 @@ function App({
     setFile(file)
     console.log({ file })
     console.log(sunvox.sv_load_from_memory(0, file))
+    sunvox.sv_send_event(0, 0, sunvox.NOTECMD_CLEAN_SYNTHS, 0, 0, 0, 0)
   }
 
   function rewindAndPlaySlot() {
