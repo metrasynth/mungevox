@@ -135,7 +135,7 @@ function App({
       <iframe srcDoc={frameContents()} ref={setJsFrame} title={`${counter}`} />
       <hr />
       <h1>
-        About the <i>SunVox Project Construction Kit (SVPCK)</i>
+        About <i>MungeVox</i>
       </h1>
     </div>
   )
