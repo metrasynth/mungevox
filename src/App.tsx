@@ -5,12 +5,16 @@ import { DEFAULT_EDITOR_OPTIONS, DEFAULT_SOURCE } from "./defaults"
 import { editor, languages } from "monaco-editor"
 import { installEmbeddedDts } from "./embeddedDts"
 import { Project } from "radiant-voices"
+import * as rv from "radiant-voices"
 import * as ts from "typescript"
 
 /** Parts of TypeScriptWorker from monaco's internals which implements ts.LanguageServiceHost, and has some extra methods. */
 type TypeScriptWorker = ts.LanguageServiceHost & {
   getEmitOutput: (file: string) => Promise<ts.EmitOutput>
 }
+
+declare var window: any
+window.radiantVoicesLibrary = rv
 
 function App({
   defaultValue = DEFAULT_SOURCE,
@@ -45,6 +49,14 @@ function App({
     const firstOutputFile = output.outputFiles[0]
     if (firstOutputFile) {
       console.log(firstOutputFile.text)
+      let used = false
+      const singleUseSetProject = (
+        value: React.SetStateAction<Project | undefined>
+      ) => {
+        setProject(value)
+        used = true
+      }
+      window.setProject = singleUseSetProject
       setJsSource(firstOutputFile.text)
       setCounter(counter + 1)
     } else {
@@ -78,11 +90,19 @@ function App({
         window.addEventListener('DOMContentLoaded', function() {
           window.setTimeout(function() {
             try {
-              let exports = {}
+              let exports = {
+                createProject: function () {
+                  throw new Error("createProject() was not defined.")
+                }
+              }
+              function require(name) {
+                if (name === "radiant-voices") {
+                  return window.parent.radiantVoicesLibrary
+                }
+              }
               ;${jsSource};
-              console.log({ exports })
-              const project = exports.createProject()
-              console.log({ project })
+              let createdProject = exports.createProject()
+              window.parent.setProject(createdProject)
             } catch(e) {
               console.error(e.toString())
             }
@@ -129,10 +149,21 @@ function App({
         <button onClick={stopSlot}>⏹</button>
         <button onClick={resetSlot}>Reset</button>
       </p>
-      <p>(Compilation and playback controls for the SunVox project.)</p>
+      {project && (
+        <div>
+          <p>Project name: {project.name}</p>
+          <p>Build number: {counter}</p>
+        </div>
+      )}
+      {!project && <div>No project built.</div>}
       <h2>Interface</h2>
       <p>(The generated interface will show here based on the source code.)</p>
-      <iframe srcDoc={frameContents()} ref={setJsFrame} title={`${counter}`} />
+      <iframe
+        style={{ display: "none" }}
+        srcDoc={frameContents()}
+        ref={setJsFrame}
+        title={`${counter}`}
+      />
       <hr />
       <h1>
         About <i>MungeVox</i>
